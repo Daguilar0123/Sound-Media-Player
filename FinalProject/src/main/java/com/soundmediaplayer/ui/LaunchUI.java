@@ -23,6 +23,7 @@ public class LaunchUI extends JFrame {
     private JButton playPauseButton;
     private JButton selectSongButton;
     private JButton infoButton;
+    private JMenuItem playPauseMenuItem;
     private JLabel timeLabel;
     private Timer timer;
     private int currentTime;
@@ -58,6 +59,7 @@ public class LaunchUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(500, 700);
         setLocationRelativeTo(null);
+        setJMenuBar(createMenuBar());
 
         JPanel mainPanel = new JPanel();
         mainPanel.setBackground(new java.awt.Color(0, 0, 0, 220));
@@ -108,10 +110,7 @@ public class LaunchUI extends JFrame {
         selectSongButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                // Stop current playback
-                audioFile.stop();
-                // Switch to AudioManager for file selection
-                WindowManager.showAudioManager();
+                openLibrary();
             }
         });
 
@@ -120,11 +119,7 @@ public class LaunchUI extends JFrame {
         playPauseButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (isPaused) {
-                    playCurrentTrack();
-                } else {
-                    pauseCurrentTrack();
-                }
+                togglePlayPause();
             }
         });
 
@@ -158,6 +153,59 @@ public class LaunchUI extends JFrame {
         add(mainPanel);
     }
 
+    private JMenuBar createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+
+        JMenu fileMenu = new JMenu("File");
+        JMenuItem openItem = new JMenuItem("Open...");
+        openItem.addActionListener(e -> openLibrary());
+        JMenuItem exitItem = new JMenuItem("Exit");
+        exitItem.addActionListener(e -> System.exit(0));
+        fileMenu.add(openItem);
+        fileMenu.addSeparator();
+        fileMenu.add(exitItem);
+
+        JMenu playbackMenu = new JMenu("Playback");
+        playPauseMenuItem = new JMenuItem("Play");
+        playPauseMenuItem.addActionListener(e -> togglePlayPause());
+        playbackMenu.add(playPauseMenuItem);
+
+        JMenu toolsMenu = new JMenu("Tools");
+        JMenuItem spotifyItem = new JMenuItem("Spotify Search");
+        spotifyItem.addActionListener(e -> WindowManager.showSpotifyLaunchUI());
+        toolsMenu.add(spotifyItem);
+
+        JMenu helpMenu = new JMenu("Help");
+        JMenuItem infoItem = new JMenuItem("Info");
+        infoItem.addActionListener(e -> displayInfo());
+        helpMenu.add(infoItem);
+
+        menuBar.add(fileMenu);
+        menuBar.add(playbackMenu);
+        menuBar.add(toolsMenu);
+        menuBar.add(helpMenu);
+        return menuBar;
+    }
+
+    private void openLibrary() {
+        audioFile.stop();
+        WindowManager.showAudioManager();
+    }
+
+    private void togglePlayPause() {
+        if (isPaused) {
+            playCurrentTrack();
+        } else {
+            pauseCurrentTrack();
+        }
+    }
+
+    private void updatePlayPauseMenuLabel() {
+        if (playPauseMenuItem != null) {
+            playPauseMenuItem.setText(isPaused ? "Play" : "Pause");
+        }
+    }
+
     /**
      * Loads a song selected from the AudioManager window and starts playback immediately.
      */
@@ -182,6 +230,7 @@ public class LaunchUI extends JFrame {
         stopTimer();
         isPaused = true;
         playPauseButton.setIcon(loadImageFromResource("/assets/Play.png"));
+        updatePlayPauseMenuLabel();
         updateTimerLabel();
         applyCoverArt(coverArtLink);
     }
@@ -202,6 +251,7 @@ public class LaunchUI extends JFrame {
             audioFile.play();
             isPaused = false;
             playPauseButton.setIcon(loadImageFromResource("/assets/Pause.png"));
+            updatePlayPauseMenuLabel();
             startTimer(currentTime, songSeekSlider.getMaximum());
         } catch (IOException e) {
             e.printStackTrace();
@@ -221,6 +271,7 @@ public class LaunchUI extends JFrame {
         }
         isPaused = true;
         stopTimer();
+        updatePlayPauseMenuLabel();
     }
 
     private void beginScrub() {
@@ -305,6 +356,7 @@ public class LaunchUI extends JFrame {
                     stopTimer();
                     isPaused = true;
                     playPauseButton.setIcon(loadImageFromResource("/assets/Play.png"));
+                    updatePlayPauseMenuLabel();
                 }
             }
         });
